@@ -5,25 +5,6 @@ use anyhow::Ok;
 use clap::{command, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[command(name = "rcli", version, author, about = "Convert CSV to JSON",long_about = None)]
-pub struct Opts {
-    #[command(subcommand)]
-    pub cmd: Command,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum Command {
-    #[command(name = "csv", about = "Convert CSV to other formats")]
-    Csv(CsvOpts),
-}
-#[derive(Debug, Clone, Copy)]
-pub enum OutputFormat {
-    Json,
-    Yaml,
-    Toml,
-}
-
-#[derive(Debug, Parser)]
 pub struct CsvOpts {
     #[arg(short, long, value_parser = file_check )]
     pub file: String,
@@ -39,6 +20,46 @@ pub struct CsvOpts {
 
     #[arg(long, default_value_t = true)]
     pub header: bool,
+}
+
+#[derive(Debug, Parser)]
+pub struct GenPassOpts {
+    #[arg(short, long, default_value_t = 16)]
+    pub length: u8,
+
+    #[arg(short, long, default_value_t = true)]
+    pub uppercase: bool,
+
+    #[arg(long, default_value_t = true)]
+    pub lowercase: bool,
+
+    #[arg(short, long, default_value_t = true)]
+    pub numbers: bool,
+
+    #[arg(short, long, default_value_t = true)]
+    pub symbols: bool,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    #[command(name = "csv", about = "Convert CSV to other formats")]
+    Csv(CsvOpts),
+
+    #[command(name = "genpass", about = "Generate a random password")]
+    GenPass(GenPassOpts),
+}
+#[derive(Debug, Parser)]
+#[command(name = "rcli", version, author, about = "Convert CSV to JSON",long_about = None)]
+pub struct Opts {
+    #[command(subcommand)]
+    pub cmd: Command,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum OutputFormat {
+    Json,
+    Yaml,
+    Toml,
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
