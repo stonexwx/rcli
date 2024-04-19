@@ -1,5 +1,7 @@
-use std::path::Path;
+use core::fmt;
+use std::{path::Path, str::FromStr};
 
+use anyhow::Ok;
 use clap::{command, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -14,14 +16,23 @@ pub enum Command {
     #[command(name = "csv", about = "Convert CSV to other formats")]
     Csv(CsvOpts),
 }
+#[derive(Debug, Clone, Copy)]
+pub enum OutputFormat {
+    Json,
+    Yaml,
+    Toml,
+}
 
 #[derive(Debug, Parser)]
 pub struct CsvOpts {
     #[arg(short, long, value_parser = file_check )]
     pub file: String,
 
-    #[arg(short, long, default_value = "output.json")]
-    pub output: String,
+    #[arg(short, long)]
+    pub output: Option<String>,
+
+    #[arg(long, value_parser = parse_output_format ,default_value = "json")]
+    pub format: OutputFormat,
 
     #[arg(short, long, default_value_t = ',')]
     pub delimiter: char,
@@ -30,10 +41,43 @@ pub struct CsvOpts {
     pub header: bool,
 }
 
-fn file_check(fliename: &str) -> Result<String, &'static str> {
+fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
     if Path::new(fliename).exists() {
-        Ok(fliename.into())
+        Ok(fliename.to_string())
     } else {
-        Err("File does not exist")
+        anyhow::bail!("File not found: {}", fliename)
+    }
+}
+
+fn parse_output_format(s: &str) -> Result<OutputFormat, anyhow::Error> {
+    s.parse()
+}
+
+impl From<OutputFormat> for &'static str {
+    fn from(f: OutputFormat) -> Self {
+        match f {
+            OutputFormat::Json => "json",
+            OutputFormat::Yaml => "yaml",
+            OutputFormat::Toml => "toml",
+        }
+    }
+}
+
+impl FromStr for OutputFormat {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "json" => Ok(OutputFormat::Json),
+            "yaml" => Ok(OutputFormat::Yaml),
+            "toml" => Ok(OutputFormat::Toml),
+            v => anyhow::bail!("Unsupported output format: {}", v),
+        }
+    }
+}
+
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", Into::<&'static str>::into(*self))
     }
 }
