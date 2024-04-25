@@ -3,7 +3,7 @@ use csv::Reader;
 use serde_json::Value;
 use std::fs;
 
-use crate::opts::OutputFormat;
+use crate::cli::csv_opts::OutputFormat;
 
 pub fn process_csv(input: &str, output: String, output_format: OutputFormat) -> anyhow::Result<()> {
     let mut reader = Reader::from_path(input)?;
