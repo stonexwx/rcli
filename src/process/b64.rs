@@ -59,6 +59,7 @@ mod tests {
             std::fs::create_dir("fixtures/encode_urlsafe").unwrap();
         }
         let mut file = std::fs::File::create(save_path).unwrap();
+        //test
         file.write_all(encoded.as_bytes()).unwrap();
     }
 
