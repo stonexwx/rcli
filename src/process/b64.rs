@@ -58,7 +58,6 @@ mod tests {
         if !std::path::Path::new("fixtures/encode_urlsafe").exists() {
             std::fs::create_dir("fixtures/encode_urlsafe").unwrap();
         }
-        //test
         let mut file = std::fs::File::create(save_path).unwrap();
         file.write_all(encoded.as_bytes()).unwrap();
     }
