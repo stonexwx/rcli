@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod process;
+pub mod utils;
 
-pub use process::process_csv;
-pub use process::process_gen_pass;
+pub use process::*;
+pub use utils::*;

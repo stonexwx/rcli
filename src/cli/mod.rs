@@ -1,12 +1,15 @@
 pub mod bas64_opts;
 pub mod csv_opts;
 pub mod gen_pass_opts;
+pub mod text;
 
 use std::path::Path;
 
 use clap::{command, Parser, Subcommand};
 
-use self::{bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts};
+use self::{
+    bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts, text::TextSubCmd,
+};
 
 #[derive(Debug, Parser)]
 #[command(name = "rcli", version, author, about = "use csv2json,generate password,encode or decode base64 tools by this cli ",long_about = None)]
@@ -25,6 +28,9 @@ pub enum Command {
 
     #[command(subcommand)]
     Base64(Base64Cmd),
+
+    #[command(subcommand)]
+    Text(TextSubCmd),
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {

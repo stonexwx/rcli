@@ -1,17 +1,6 @@
-use std::io::Read;
-
 use base64::{engine::general_purpose::URL_SAFE, prelude::BASE64_STANDARD, Engine as _};
 
-use crate::cli::bas64_opts::Base64FormatType;
-
-fn get_reader(input: &str) -> Result<Box<dyn Read>, anyhow::Error> {
-    let reader: Box<dyn Read> = if input == "-" {
-        Box::new(std::io::stdin())
-    } else {
-        Box::new(std::fs::File::open(input)?)
-    };
-    Ok(reader)
-}
+use crate::{cli::bas64_opts::Base64FormatType, get_reader};
 
 pub fn process_encode(input: &str, format: Base64FormatType) -> anyhow::Result<String> {
     let mut reader = get_reader(input)?;

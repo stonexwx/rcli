@@ -1,8 +1,12 @@
 use clap::Parser;
 use rcli::{
-    cli::{bas64_opts::Base64Cmd, Command, Opts},
+    cli::{
+        bas64_opts::Base64Cmd,
+        text::{TextSignFormat, TextSubCmd},
+        Command, Opts,
+    },
     process::{process_decode, process_encode},
-    process_csv, process_gen_pass,
+    process_csv, process_gen_pass, process_sign, process_verify,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -34,6 +38,24 @@ fn main() -> anyhow::Result<()> {
             Base64Cmd::Decode(opts) => {
                 process_decode(&opts.input, opts.format)?;
             }
+        },
+        Command::Text(opts) => match opts {
+            TextSubCmd::Sign(opts) => match opts.format {
+                TextSignFormat::Blake3 => {
+                    process_sign(&opts.input, &opts.key, opts.format)?;
+                }
+                TextSignFormat::Ed25519 => {
+                    println!("Ed25519");
+                }
+            },
+            TextSubCmd::Verify(opts) => match opts.format {
+                TextSignFormat::Blake3 => {
+                    process_verify(&opts.input, &opts.key, &opts.signature, opts.format)?;
+                }
+                TextSignFormat::Ed25519 => {
+                    println!("Ed25519");
+                }
+            },
         },
     }
     Ok(())
