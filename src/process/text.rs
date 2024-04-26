@@ -4,10 +4,8 @@ use std::io::Read;
 use crate::{cli::text::TextSignFormat, get_reader};
 use anyhow::Result;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use ed25519_dalek::SigningKey;
-
 trait TextSign {
-    fn sign(&self, reader: &mut dyn Read) -> Result<Vec<u8>>;
+    fn sign<R: Read>(&self, reader: R) -> Result<Vec<u8>>;
 }
 
 trait TextVerify {
@@ -27,8 +25,6 @@ struct Blake3 {
 
 pub fn process_sign(input: &str, key: &str, format: TextSignFormat) -> Result<()> {
     let mut reader = get_reader(input)?;
-    let mut buf = Vec::new();
-    reader.read_to_end(&mut buf)?;
     let signature = match format {
         TextSignFormat::Blake3 => {
             let key = fs::read(key)?;
@@ -68,14 +64,14 @@ pub fn process_verify(
 }
 
 impl TextSign for Blake3 {
-    fn sign(&self, reader: &mut dyn Read) -> Result<Vec<u8>> {
+    fn sign<R: Read>(&self, mut reader: R) -> Result<Vec<u8>> {
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf)?;
-        println!("{:?}", &buf);
+
         let mut hash = blake3::Hasher::new_keyed(&self.key);
         hash.update(&buf);
         let hasn = hash.finalize();
-        println!("{:?}", hasn);
+
         Ok(hasn.as_bytes().to_vec())
     }
 }
@@ -84,12 +80,10 @@ impl TextVerify for Blake3 {
     fn verify<R: Read>(&self, mut reader: R, signature: &[u8]) -> Result<bool> {
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf)?;
-        println!("{:?}", &buf);
         let mut hash = blake3::Hasher::new_keyed(&self.key);
         hash.update(&buf);
         let hasn = hash.finalize();
-        println!("{:?}", hasn);
-        println!("{:?}", signature);
+
         Ok(hasn.as_bytes().to_vec() == signature.to_vec())
     }
 }
