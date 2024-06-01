@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use anyhow::Context;
+use anyhow::Result;
 use clap::Parser;
 use rcli::{
     cli::{bas64_opts::Base64Cmd, text::TextSubCmd, Command, Opts},
@@ -13,7 +13,7 @@ use rcli::{
     process_csv, process_gen_pass, process_sign, process_verify,
 };
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     let opts = Opts::parse();
     match opts.cmd {
         Command::Csv(opts) => {
