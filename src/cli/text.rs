@@ -11,6 +11,8 @@ pub enum TextSubCmd {
     Sign(TextSignOpts),
     #[command(about = " Verify text with a public key / shared key")]
     Verify(TextVerifyOpts),
+    #[command(about = "Generate a new key")]
+    Generate(TextKeyGenerateOpts),
 }
 
 #[derive(Debug, Parser)]
@@ -33,6 +35,14 @@ pub struct TextVerifyOpts {
     pub signature: String,
     #[arg(long,default_value = "blake3",value_parser =  parse_formate)]
     pub format: TextSignFormat,
+}
+
+#[derive(Debug, Parser)]
+pub struct TextKeyGenerateOpts {
+    #[arg(short, long, default_value = "ed25519")]
+    pub format: TextSignFormat,
+    #[arg(long, default_value = "keys")]
+    pub path: String,
 }
 
 #[derive(Debug, Clone, Copy)]

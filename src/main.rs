@@ -1,6 +1,14 @@
+use std::{
+    fs::{self, File},
+    io::Write,
+    path::Path,
+};
+
+use anyhow::Context;
 use clap::Parser;
 use rcli::{
     cli::{bas64_opts::Base64Cmd, text::TextSubCmd, Command, Opts},
+    create_key,
     process::{process_decode, process_encode},
     process_csv, process_gen_pass, process_sign, process_verify,
 };
@@ -41,6 +49,30 @@ fn main() -> anyhow::Result<()> {
             }
             TextSubCmd::Verify(opts) => {
                 process_verify(&opts.input, &opts.key, &opts.signature, opts.format)?;
+            }
+            TextSubCmd::Generate(opts) => {
+                let res = create_key(opts.format)?;
+                match opts.format {
+                    rcli::cli::text::TextSignFormat::Blake3 => {
+                        if !Path::new(&opts.path).exists() {
+                            fs::create_dir(&opts.path)?;
+                        }
+                        let mut file = File::create(format!("{}/blake3.key", opts.path))?;
+                        file.write_all(&res[0])?;
+                        file.flush()?;
+                    }
+                    rcli::cli::text::TextSignFormat::Ed25519 => {
+                        if !Path::new(&opts.path).exists() {
+                            fs::create_dir(&opts.path)?;
+                        }
+                        let mut public_file = File::create(format!("{}/ed25519.pub", opts.path))?;
+                        let mut private_file = File::create(format!("{}/ed25519.priv", opts.path))?;
+                        public_file.write_all(&res[1])?;
+                        private_file.write_all(&res[0])?;
+                        public_file.flush()?;
+                        private_file.flush()?;
+                    }
+                }
             }
         },
     }

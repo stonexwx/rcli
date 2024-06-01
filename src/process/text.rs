@@ -1,10 +1,13 @@
 use std::fs;
 use std::io::Read;
 
-use crate::{cli::text::TextSignFormat, get_reader};
-use anyhow::Result;
+use crate::{cli::text::TextSignFormat, get_reader, process_gen_pass};
+use anyhow::{Context, Result};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use ed25519_dalek::{ed25519::signature::SignerMut, Signature, SigningKey, VerifyingKey};
+use ed25519_dalek::{
+    ed25519::signature::SignerMut, SecretKey, Signature, SigningKey, VerifyingKey,
+};
+
 pub trait TextSign {
     fn sign<R: Read>(&self, reader: R) -> Result<Vec<u8>>;
 }
@@ -17,6 +20,10 @@ pub trait KeyLoader {
     fn load_key(path: &str) -> Result<Self>
     where
         Self: Sized;
+}
+
+pub trait KeyGenerator {
+    fn generate() -> Result<Vec<Vec<u8>>>;
 }
 
 struct Blake3 {
@@ -65,6 +72,13 @@ pub fn process_verify(
     };
     println!("{}", result);
     Ok(result)
+}
+
+pub fn create_key(format: TextSignFormat) -> Result<Vec<Vec<u8>>> {
+    match format {
+        TextSignFormat::Blake3 => Blake3::generate(),
+        TextSignFormat::Ed25519 => Ed25519::generate(),
+    }
 }
 
 impl TextSign for Blake3 {
@@ -126,6 +140,27 @@ impl KeyLoader for Ed25519 {
     }
 }
 
+impl KeyGenerator for Ed25519 {
+    fn generate() -> Result<Vec<Vec<u8>>> {
+        let secret_key =
+            process_gen_pass(32, true, true, true, true).context("Failed to generate key")?;
+        let secret_key: SecretKey = secret_key.as_bytes().try_into().context("Invalid key")?;
+        let signing_key = SigningKey::from_bytes(&secret_key);
+        let verifying_key = signing_key.verifying_key();
+        let verifying_key = verifying_key.to_bytes().to_vec();
+        let secret_key = secret_key.to_vec();
+        Ok(vec![secret_key, verifying_key])
+    }
+}
+
+impl KeyGenerator for Blake3 {
+    fn generate() -> Result<Vec<Vec<u8>>> {
+        let key = process_gen_pass(32, true, true, true, true)?;
+        let key = key.into_bytes();
+        Ok(vec![key])
+    }
+}
+
 impl Blake3 {
     pub fn new(key: [u8; 32]) -> Self {
         Self { key }
@@ -152,31 +187,61 @@ impl Ed25519 {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
+    use std::{env, io::Write, path::PathBuf};
 
     use super::*;
 
-    #[test]
+    fn get_fixture_path(filename: &str) -> PathBuf {
+        let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+        path.push("fixtures");
+        path.push(filename);
+        path
+    }
+
+    fn test_create_key() {
+        let format = TextSignFormat::Blake3;
+        let key = create_key(format).unwrap();
+        let save_path = get_fixture_path("blake3.txt");
+        let mut file = std::fs::File::create(save_path).unwrap();
+        file.write_all(&key[0]).unwrap();
+        file.flush().unwrap();
+    }
+
+    fn test_create_key_ed25519() {
+        let format = TextSignFormat::Ed25519;
+        let key = create_key(format).unwrap();
+        let public_path = get_fixture_path("ed25519.pub");
+        let privete_path = get_fixture_path("ed25519.priv");
+        let mut public_file = std::fs::File::create(public_path).unwrap();
+        public_file.write_all(&key[1]).unwrap();
+        public_file.flush().unwrap();
+        let mut private_file = std::fs::File::create(privete_path).unwrap();
+        private_file.write_all(&key[0]).unwrap();
+        private_file.flush().unwrap();
+    }
+
     fn test_process_sign() {
-        let input = "Cargo.toml";
-        let key = "/root/rustProject/rcli/fixtures/blake3.txt";
+        let input = "cliff.toml";
+        let binding = get_fixture_path("blake3.txt");
+        let key = binding.to_str().unwrap();
         let format = TextSignFormat::Blake3;
 
         let sign = process_sign(input, key, format).unwrap();
-        let save_path = "/root/rustProject/rcli/fixtures/sign/blake3.sig";
-        if !std::path::Path::new("fixtures/sign").exists() {
-            std::fs::create_dir("fixtures/sign").unwrap();
+        let save_file_path = get_fixture_path("sign/blake3.sig");
+        let save_path = get_fixture_path("sign");
+        if !std::path::Path::new(&save_path).exists() {
+            std::fs::create_dir(save_path).unwrap();
         }
-        let mut file = std::fs::File::create(save_path).unwrap();
+        let mut file = std::fs::File::create(save_file_path).unwrap();
         file.write_all(sign.as_bytes()).unwrap();
         file.flush().unwrap();
     }
 
-    #[test]
     fn test_process_verify() {
-        let input = "Cargo.toml";
-        let key = "/root/rustProject/rcli/fixtures/blake3.txt";
-        let signature_file_path = "/root/rustProject/rcli/fixtures/sign/blake3.sig";
+        let input = "cliff.toml";
+        let binding = get_fixture_path("blake3.txt");
+        let key = binding.to_str().unwrap();
+        let signature_file_path = get_fixture_path("sign/blake3.sig");
         let format = TextSignFormat::Blake3;
         let mut file = std::fs::File::open(signature_file_path).unwrap();
         let mut signature = String::new();
@@ -185,32 +250,42 @@ mod tests {
         assert!(process_verify(input, key, &signature, format).unwrap());
     }
 
-    #[test]
     fn test_process_sign_ed25519() {
         let input = "Cargo.toml";
-        let key = "/root/rustProject/rcli/fixtures/blake3.txt";
+        let binding = get_fixture_path("ed25519.priv");
+        let key = binding.to_str().unwrap();
         let format = TextSignFormat::Ed25519;
-
+        let save_file_path = get_fixture_path("sign/ed25519.sig");
         let sign = process_sign(input, key, format).unwrap();
-        let save_path = "fixtures/sign/ed25519.sig";
-        if !std::path::Path::new("/root/rustProject/rcli/fixtures/sign").exists() {
-            std::fs::create_dir("fixtures/sign").unwrap();
+        let save_path = get_fixture_path("sign");
+        if !std::path::Path::new(&save_path).exists() {
+            std::fs::create_dir(save_path).unwrap();
         }
-        let mut file = std::fs::File::create(save_path).unwrap();
+        let mut file = std::fs::File::create(save_file_path).unwrap();
         file.write_all(sign.as_bytes()).unwrap();
         file.flush().unwrap();
     }
 
-    #[test]
     fn test_process_verify_ed25519() {
         let input = "Cargo.toml";
-        let key = "/root/rustProject/rcli/fixtures/blake3.txt";
-        let signature_file_path = "/root/rustProject/rcli/fixtures/sign/ed25519.sig";
+        let binding = get_fixture_path("ed25519.pub");
+        let key = binding.to_str().unwrap();
+        let signature_file_path = get_fixture_path("sign/ed25519.sig");
         let format = TextSignFormat::Ed25519;
         let mut file = std::fs::File::open(signature_file_path).unwrap();
         let mut signature = String::new();
         file.read_to_string(&mut signature).unwrap();
 
         assert!(process_verify(input, key, &signature, format).unwrap());
+    }
+
+    #[test]
+    fn test_text_sign() {
+        test_create_key();
+        test_process_sign();
+        test_process_verify();
+        test_create_key_ed25519();
+        test_process_sign_ed25519();
+        test_process_verify_ed25519();
     }
 }
