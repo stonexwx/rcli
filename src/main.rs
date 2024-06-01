@@ -57,7 +57,7 @@ fn main() -> Result<()> {
                         if !Path::new(&opts.path).exists() {
                             fs::create_dir(&opts.path)?;
                         }
-                        let mut file = File::create(format!("{}/blake3.key", opts.path))?;
+                        let mut file = File::create(format!("{}/blake3.key", opts.path.display()))?;
                         file.write_all(&res[0])?;
                         file.flush()?;
                     }
@@ -65,8 +65,10 @@ fn main() -> Result<()> {
                         if !Path::new(&opts.path).exists() {
                             fs::create_dir(&opts.path)?;
                         }
-                        let mut public_file = File::create(format!("{}/ed25519.pub", opts.path))?;
-                        let mut private_file = File::create(format!("{}/ed25519.priv", opts.path))?;
+                        let mut public_file =
+                            File::create(format!("{}/ed25519.pub", opts.path.display()))?;
+                        let mut private_file =
+                            File::create(format!("{}/ed25519.priv", opts.path.display()))?;
                         public_file.write_all(&res[1])?;
                         private_file.write_all(&res[0])?;
                         public_file.flush()?;

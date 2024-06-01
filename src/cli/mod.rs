@@ -41,6 +41,14 @@ fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
     }
 }
 
+fn path_check(path: &str) -> Result<String, anyhow::Error> {
+    if Path::new(path).exists() {
+        Ok(path.to_string())
+    } else {
+        anyhow::bail!("Path not found: {}", path)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,9 +1,9 @@
 use core::fmt;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use clap::Parser;
 
-use super::file_check;
+use super::{file_check, path_check};
 
 #[derive(Debug, Parser)]
 pub enum TextSubCmd {
@@ -41,8 +41,8 @@ pub struct TextVerifyOpts {
 pub struct TextKeyGenerateOpts {
     #[arg(short, long, default_value = "ed25519")]
     pub format: TextSignFormat,
-    #[arg(long, default_value = "keys")]
-    pub path: String,
+    #[arg(long, default_value = "keys" , value_parser = path_check)]
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Clone, Copy)]
