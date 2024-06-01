@@ -102,8 +102,8 @@ impl TextVerify for Ed25519 {
     fn verify<R: Read>(&self, mut reader: R, signature: &[u8]) -> Result<bool> {
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf)?;
-        let signing_key = SigningKey::from_bytes(&self.key);
-        let verifying_key: VerifyingKey = signing_key.verifying_key();
+
+        let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&self.key)?;
 
         let signature = signature.try_into()?;
         let signature = Signature::from_bytes(signature);
