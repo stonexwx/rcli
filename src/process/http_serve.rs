@@ -35,22 +35,20 @@ async fn file_handler(
     info!("Requesting file: {:?}", p);
     if p.exists() {
         match tokio::fs::read(p).await {
-            Ok(content) => {
-                return (
-                    StatusCode::OK,
-                    String::from_utf8_lossy(&content).to_string(),
-                )
-            }
+            Ok(content) => (
+                StatusCode::OK,
+                String::from_utf8_lossy(&content).to_string(),
+            ),
             Err(e) => {
                 error!("Error reading file: {:?}", e);
-                return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
             }
         }
     } else {
         error!("File not found: {:?}", p.display());
-        return (
+        (
             StatusCode::NOT_FOUND,
             format!("File not found: {:?}", p.display()),
-        );
+        )
     }
 }
