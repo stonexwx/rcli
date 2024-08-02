@@ -1,14 +1,16 @@
 pub mod bas64_opts;
 pub mod csv_opts;
 pub mod gen_pass_opts;
+pub mod http;
 pub mod text;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::{command, Parser, Subcommand};
 
 use self::{
-    bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts, text::TextSubCmd,
+    bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts, http::HttpSubCmd,
+    text::TextSubCmd,
 };
 
 #[derive(Debug, Parser)]
@@ -31,6 +33,9 @@ pub enum Command {
 
     #[command(subcommand)]
     Text(TextSubCmd),
+
+    #[command(subcommand)]
+    Http(HttpSubCmd),
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
@@ -44,6 +49,13 @@ fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
 fn path_check(path: &str) -> Result<String, anyhow::Error> {
     if Path::new(path).exists() {
         Ok(path.to_string())
+    } else {
+        anyhow::bail!("Path not found: {}", path)
+    }
+}
+fn path_buf_check(path: &str) -> Result<PathBuf, anyhow::Error> {
+    if Path::new(path).exists() {
+        Ok(path.into())
     } else {
         anyhow::bail!("Path not found: {}", path)
     }

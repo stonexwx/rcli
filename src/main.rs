@@ -7,13 +7,15 @@ use std::{
 use anyhow::Result;
 use clap::Parser;
 use rcli::{
-    cli::{bas64_opts::Base64Cmd, text::TextSubCmd, Command, Opts},
+    cli::{bas64_opts::Base64Cmd, http::HttpSubCmd, text::TextSubCmd, Command, Opts},
     create_key,
     process::{process_decode, process_encode},
-    process_csv, process_gen_pass, process_sign, process_verify,
+    process_csv, process_gen_pass, process_http_server, process_sign, process_verify,
 };
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
     let opts = Opts::parse();
     match opts.cmd {
         Command::Csv(opts) => {
@@ -75,6 +77,11 @@ fn main() -> Result<()> {
                         private_file.flush()?;
                     }
                 }
+            }
+        },
+        Command::Http(opts) => match opts {
+            HttpSubCmd::Serve(opts) => {
+                process_http_server(opts.dir, opts.port).await?;
             }
         },
     }
