@@ -8,6 +8,8 @@ use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use tracing::{error, info};
 
+use tower_http::services::ServeDir;
+
 #[derive(Debug)]
 struct HttpServerState {
     path: PathBuf,
@@ -18,9 +20,15 @@ pub async fn process_http_server(path: PathBuf, port: u16) -> Result<()> {
     info!("Serving {:?} on port {}", addr, port);
 
     let state = HttpServerState { path };
+    let serve_dir = ServeDir::new(state.path.clone())
+        .append_index_html_on_directories(true)
+        .precompressed_gzip()
+        .precompressed_br()
+        .precompressed_zstd();
     // axum router
     let router = axum::Router::new()
         .route("/*path", get(file_handler))
+        .nest_service("/tower", serve_dir)
         .with_state(Arc::new(state));
     let listerner = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listerner, router).await?;
@@ -50,5 +58,28 @@ async fn file_handler(
             StatusCode::NOT_FOUND,
             format!("File not found: {:?}", p.display()),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{path::PathBuf, sync::Arc};
+
+    use axum::{
+        extract::{Path, State},
+        http::StatusCode,
+    };
+
+    use crate::process::http_serve::{file_handler, HttpServerState};
+
+    #[tokio::test]
+    async fn test_file_handler() {
+        let state = Arc::new(HttpServerState {
+            path: PathBuf::from("."),
+        });
+        let (status, connect) =
+            file_handler(State(state.clone()), Path("Cargo.toml".to_string())).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(connect.trim().starts_with("[package]"));
     }
 }
