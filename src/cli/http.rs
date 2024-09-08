@@ -16,3 +16,11 @@ pub struct HttpServerOpts {
     #[arg(short, long, default_value = "8080")]
     pub port: u16,
 }
+
+impl crate::CmdEexector for HttpSubCmd {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            HttpSubCmd::Serve(opts) => crate::process_http_server(opts.dir, opts.port).await,
+        }
+    }
+}

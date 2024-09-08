@@ -17,3 +17,17 @@ pub struct GenPassOpts {
     #[arg(short, long, default_value_t = true)]
     pub symbols: bool,
 }
+
+impl crate::CmdEexector for GenPassOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let password = crate::process_gen_pass(
+            self.length,
+            self.uppercase,
+            self.lowercase,
+            self.numbers,
+            self.symbols,
+        )?;
+        println!("{}", password);
+        Ok(())
+    }
+}

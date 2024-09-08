@@ -8,17 +8,50 @@ use super::file_check;
 #[derive(Debug, Parser)]
 pub enum Base64Cmd {
     #[command(name = "encode", about = "Encode base64")]
-    Encode(Base64Opts),
+    Encode(Base64EncodeOpts),
     #[command(name = "decode", about = "Decode base64")]
-    Decode(Base64Opts),
+    Decode(Base64DecodeOpts),
+}
+
+impl crate::CmdEexector for Base64Cmd {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            Base64Cmd::Encode(opts) => opts.execute().await,
+            Base64Cmd::Decode(opts) => opts.execute().await,
+        }
+    }
 }
 
 #[derive(Debug, Parser)]
-pub struct Base64Opts {
+pub struct Base64EncodeOpts {
     #[arg(short, long, value_parser = file_check,default_value = "-")]
     pub input: String,
     #[arg( long,default_value = "standard",value_parser = parse_base64_format)]
     pub format: Base64FormatType,
+}
+
+impl crate::CmdEexector for Base64EncodeOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let ret = crate::process_encode(&self.input, self.format)?;
+        println!("{}", ret);
+        Ok(())
+    }
+}
+
+#[derive(Debug, Parser)]
+pub struct Base64DecodeOpts {
+    #[arg(short, long, value_parser = file_check,default_value = "-")]
+    pub input: String,
+    #[arg( long,default_value = "standard",value_parser = parse_base64_format)]
+    pub format: Base64FormatType,
+}
+
+impl crate::CmdEexector for Base64DecodeOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let ret = crate::process_decode(&self.input, self.format)?;
+        println!("{}", ret);
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -1,7 +1,14 @@
 use core::fmt;
-use std::{path::PathBuf, str::FromStr};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use clap::Parser;
+use tokio::{
+    fs::{self, File},
+    io::AsyncWriteExt,
+};
 
 use super::{file_check, path_check};
 
@@ -15,6 +22,16 @@ pub enum TextSubCmd {
     Generate(TextKeyGenerateOpts),
 }
 
+impl crate::CmdEexector for TextSubCmd {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            TextSubCmd::Sign(opts) => opts.execute().await,
+            TextSubCmd::Verify(opts) => opts.execute().await,
+            TextSubCmd::Generate(opts) => opts.execute().await,
+        }
+    }
+}
+
 #[derive(Debug, Parser)]
 pub struct TextSignOpts {
     #[arg(short, long, value_parser = file_check,default_value = "-")]
@@ -23,6 +40,14 @@ pub struct TextSignOpts {
     pub key: String,
     #[arg(long,default_value = "blake3",value_parser =  parse_formate)]
     pub format: TextSignFormat,
+}
+
+impl crate::CmdEexector for TextSignOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let ret = crate::process_sign(&self.input, &self.key, self.format)?;
+        println!("{}", ret);
+        Ok(())
+    }
 }
 
 #[derive(Debug, Parser)]
@@ -37,12 +62,50 @@ pub struct TextVerifyOpts {
     pub format: TextSignFormat,
 }
 
+impl crate::CmdEexector for TextVerifyOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let ret = crate::process_verify(&self.input, &self.key, &self.signature, self.format)?;
+        println!("{}", ret);
+        Ok(())
+    }
+}
+
 #[derive(Debug, Parser)]
 pub struct TextKeyGenerateOpts {
     #[arg(short, long, default_value = "ed25519")]
     pub format: TextSignFormat,
     #[arg(long, default_value = "keys" , value_parser = path_check)]
     pub path: PathBuf,
+}
+
+impl crate::CmdEexector for TextKeyGenerateOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let res = crate::create_key(self.format)?;
+        match self.format {
+            crate::cli::text::TextSignFormat::Blake3 => {
+                if !Path::new(&self.path).exists() {
+                    fs::create_dir(&self.path).await?;
+                }
+                let mut file = File::create(format!("{}/blake3.key", self.path.display())).await?;
+                file.write_all(&res[0]).await?;
+                file.flush().await?;
+            }
+            crate::cli::text::TextSignFormat::Ed25519 => {
+                if !Path::new(&self.path).exists() {
+                    fs::create_dir(&self.path).await?;
+                }
+                let mut public_file =
+                    File::create(format!("{}/ed25519.pub", self.path.display())).await?;
+                let mut private_file =
+                    File::create(format!("{}/ed25519.priv", self.path.display())).await?;
+                public_file.write_all(&res[1]).await?;
+                private_file.write_all(&res[0]).await?;
+                public_file.flush().await?;
+                private_file.flush().await?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

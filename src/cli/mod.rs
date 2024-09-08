@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 
 use clap::{command, Parser, Subcommand};
 
+use crate::CmdEexector;
+
 use self::{
     bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts, http::HttpSubCmd,
     text::TextSubCmd,
@@ -36,6 +38,18 @@ pub enum Command {
 
     #[command(subcommand)]
     Http(HttpSubCmd),
+}
+
+impl CmdEexector for Command {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            Command::Csv(opts) => opts.execute().await,
+            Command::GenPass(opts) => opts.execute().await,
+            Command::Base64(opts) => opts.execute().await,
+            Command::Text(opts) => opts.execute().await,
+            Command::Http(opts) => opts.execute().await,
+        }
+    }
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {

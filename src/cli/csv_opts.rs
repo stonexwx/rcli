@@ -23,6 +23,18 @@ pub struct CsvOpts {
     pub header: bool,
 }
 
+impl crate::CmdEexector for CsvOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let output = if let Some(output) = self.output {
+            output
+        } else {
+            format!("output.{}", self.format)
+        };
+
+        crate::process_csv(&self.file, output, self.format)
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum OutputFormat {
     Json,
