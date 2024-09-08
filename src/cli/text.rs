@@ -13,6 +13,7 @@ use tokio::{
 use super::{file_check, path_check};
 
 #[derive(Debug, Parser)]
+#[enum_dispatch::enum_dispatch(CmdEexector)]
 pub enum TextSubCmd {
     #[command(about = "Sign text with a private key / shared key")]
     Sign(TextSignOpts),
@@ -20,16 +21,6 @@ pub enum TextSubCmd {
     Verify(TextVerifyOpts),
     #[command(about = "Generate a new key")]
     Generate(TextKeyGenerateOpts),
-}
-
-impl crate::CmdEexector for TextSubCmd {
-    async fn execute(self) -> anyhow::Result<()> {
-        match self {
-            TextSubCmd::Sign(opts) => opts.execute().await,
-            TextSubCmd::Verify(opts) => opts.execute().await,
-            TextSubCmd::Generate(opts) => opts.execute().await,
-        }
-    }
 }
 
 #[derive(Debug, Parser)]

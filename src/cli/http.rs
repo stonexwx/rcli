@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use super::path_buf_check;
 
 #[derive(Debug, Parser)]
+#[enum_dispatch::enum_dispatch(CmdEexector)]
 pub enum HttpSubCmd {
     #[command(about = "Serve a directory over HTTP")]
     Serve(HttpServerOpts),
@@ -17,10 +18,9 @@ pub struct HttpServerOpts {
     pub port: u16,
 }
 
-impl crate::CmdEexector for HttpSubCmd {
+impl crate::CmdEexector for HttpServerOpts {
     async fn execute(self) -> anyhow::Result<()> {
-        match self {
-            HttpSubCmd::Serve(opts) => crate::process_http_server(opts.dir, opts.port).await,
-        }
+        crate::process_http_server(self.dir, self.port).await?;
+        Ok(())
     }
 }

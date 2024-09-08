@@ -6,20 +6,12 @@ use clap::Parser;
 use super::file_check;
 
 #[derive(Debug, Parser)]
+#[enum_dispatch::enum_dispatch(CmdEexector)]
 pub enum Base64Cmd {
     #[command(name = "encode", about = "Encode base64")]
     Encode(Base64EncodeOpts),
     #[command(name = "decode", about = "Decode base64")]
     Decode(Base64DecodeOpts),
-}
-
-impl crate::CmdEexector for Base64Cmd {
-    async fn execute(self) -> anyhow::Result<()> {
-        match self {
-            Base64Cmd::Encode(opts) => opts.execute().await,
-            Base64Cmd::Decode(opts) => opts.execute().await,
-        }
-    }
 }
 
 #[derive(Debug, Parser)]

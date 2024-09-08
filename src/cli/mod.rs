@@ -7,13 +7,9 @@ pub mod text;
 use std::path::{Path, PathBuf};
 
 use clap::{command, Parser, Subcommand};
+use enum_dispatch::enum_dispatch;
 
-use crate::CmdEexector;
-
-use self::{
-    bas64_opts::Base64Cmd, csv_opts::CsvOpts, gen_pass_opts::GenPassOpts, http::HttpSubCmd,
-    text::TextSubCmd,
-};
+pub use self::{bas64_opts::*, csv_opts::*, gen_pass_opts::*, http::*, text::*};
 
 #[derive(Debug, Parser)]
 #[command(name = "rcli", version, author, about = "use csv2json,generate password,encode or decode base64 tools by this cli ",long_about = None)]
@@ -23,6 +19,7 @@ pub struct Opts {
 }
 
 #[derive(Debug, Subcommand)]
+#[enum_dispatch(CmdEexector)]
 pub enum Command {
     #[command(name = "csv", about = "Convert CSV to other formats")]
     Csv(CsvOpts),
@@ -38,18 +35,6 @@ pub enum Command {
 
     #[command(subcommand)]
     Http(HttpSubCmd),
-}
-
-impl CmdEexector for Command {
-    async fn execute(self) -> anyhow::Result<()> {
-        match self {
-            Command::Csv(opts) => opts.execute().await,
-            Command::GenPass(opts) => opts.execute().await,
-            Command::Base64(opts) => opts.execute().await,
-            Command::Text(opts) => opts.execute().await,
-            Command::Http(opts) => opts.execute().await,
-        }
-    }
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
