@@ -29,7 +29,7 @@ pub struct TextSignOpts {
     pub input: String,
     #[arg( long,value_parser = file_check)]
     pub key: String,
-    #[arg(long,default_value = "blake3",value_parser =  parse_formate)]
+    #[arg(long,default_value = "blake3",value_parser =  parse_format)]
     pub format: TextSignFormat,
 }
 
@@ -49,7 +49,7 @@ pub struct TextVerifyOpts {
     pub key: String,
     #[arg(short, long)]
     pub signature: String,
-    #[arg(long,default_value = "blake3",value_parser =  parse_formate)]
+    #[arg(long,default_value = "blake3",value_parser =  parse_format)]
     pub format: TextSignFormat,
 }
 
@@ -126,6 +126,6 @@ impl fmt::Display for TextSignFormat {
     }
 }
 
-fn parse_formate(s: &str) -> Result<TextSignFormat, anyhow::Error> {
+fn parse_format(s: &str) -> Result<TextSignFormat, anyhow::Error> {
     s.parse()
 }

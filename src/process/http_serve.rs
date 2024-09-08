@@ -30,8 +30,8 @@ pub async fn process_http_server(path: PathBuf, port: u16) -> Result<()> {
         .route("/*path", get(file_handler))
         .nest_service("/tower", serve_dir)
         .with_state(Arc::new(state));
-    let listerner = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listerner, router).await?;
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, router).await?;
     Ok(())
 }
 
