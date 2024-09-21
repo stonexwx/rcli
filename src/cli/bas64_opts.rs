@@ -24,7 +24,7 @@ pub struct Base64EncodeOpts {
 
 impl crate::CmdEexector for Base64EncodeOpts {
     async fn execute(self) -> anyhow::Result<()> {
-        let ret = crate::process_encode(&self.input, self.format)?;
+        let ret = crate::process_encode(&self.input, self.format).await?;
         println!("{}", ret);
         Ok(())
     }
@@ -40,7 +40,7 @@ pub struct Base64DecodeOpts {
 
 impl crate::CmdEexector for Base64DecodeOpts {
     async fn execute(self) -> anyhow::Result<()> {
-        let ret = crate::process_decode(&self.input, self.format)?;
+        let ret = crate::process_decode(&self.input, self.format).await?;
         println!("{}", ret);
         Ok(())
     }

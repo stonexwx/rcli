@@ -2,6 +2,7 @@ pub mod bas64_opts;
 pub mod csv_opts;
 pub mod gen_pass_opts;
 pub mod http;
+pub mod jwt_opts;
 pub mod text;
 
 use std::path::{Path, PathBuf};
@@ -9,7 +10,7 @@ use std::path::{Path, PathBuf};
 use clap::{command, Parser, Subcommand};
 use enum_dispatch::enum_dispatch;
 
-pub use self::{bas64_opts::*, csv_opts::*, gen_pass_opts::*, http::*, text::*};
+pub use self::{bas64_opts::*, csv_opts::*, gen_pass_opts::*, http::*, jwt_opts::*, text::*};
 
 #[derive(Debug, Parser)]
 #[command(name = "rcli", version, author, about = "use csv2json,generate password,encode or decode base64 tools by this cli ",long_about = None)]
@@ -35,6 +36,9 @@ pub enum Command {
 
     #[command(subcommand, about = "HTTP server")]
     Http(HttpSubCmd),
+
+    #[command(subcommand, about = "JWT token")]
+    JWT(JWTCmd),
 }
 
 fn file_check(fliename: &str) -> Result<String, anyhow::Error> {
