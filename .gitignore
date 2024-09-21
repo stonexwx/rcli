@@ -3,4 +3,10 @@
 /*.b64
 
 /.idea
-/fixture
+/fixtures/decode_urlsafe/*
+/fixtures/encode_urlsafe/*
+/fixtures/sign/*
+/fixtures/*.key
+/fixtures/*.txt
+/fixtures/*.priv
+/fixtures/*.pub
