@@ -3,8 +3,8 @@
 /*.b64
 
 /.idea
-/fixtures/decode_urlsafe/*.txt
-/fixtures/encode_urlsafe/*.txt
+# /fixtures/decode_urlsafe/*.txt
+# /fixtures/encode_urlsafe/*.txt
 /fixtures/sign/*.sig
 /fixtures/*.key
 /fixtures/*.txt
